@@ -1,66 +1,59 @@
-/**
- * Copyright (c) 2014 - 2021, Nordic Semiconductor ASA
- *
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form, except as embedded into a Nordic
- *    Semiconductor ASA integrated circuit in a product or a software update for
- *    such product, must reproduce the above copyright notice, this list of
- *    conditions and the following disclaimer in the documentation and/or other
- *    materials provided with the distribution.
- *
- * 3. Neither the name of Nordic Semiconductor ASA nor the names of its
- *    contributors may be used to endorse or promote products derived from this
- *    software without specific prior written permission.
- *
- * 4. This software, with or without modification, must only be used with a
- *    Nordic Semiconductor ASA integrated circuit.
- *
- * 5. Any software provided in binary form under this license must not be reverse
- *    engineered, decompiled, modified and/or disassembled.
- *
- * THIS SOFTWARE IS PROVIDED BY NORDIC SEMICONDUCTOR ASA "AS IS" AND ANY EXPRESS
- * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY, NONINFRINGEMENT, AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL NORDIC SEMICONDUCTOR ASA OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
- * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- */
-
 #include <stdbool.h>
 #include <stdint.h>
 #include "nrf_delay.h"
-#include "boards.h"
+#include "button.h"
+#include "led.h"
 
-static const uint8_t board_id[4] = {7,2,0,2};
+static const uint8_t board_id[4] = {7, 2, 0, 2};
+
+static const uint32_t led_pins[4] = 
+{
+    LED0_GREEN_PIN,
+    LED1_RED_PIN,
+    LED1_GREEN_PIN,
+    LED1_BLUE_PIN
+};
 
 int main(void)
 {
-    bsp_board_init(BSP_INIT_LEDS);
+    static uint8_t index = 0;
+    static uint8_t i = 0;
+
+    button_init();
+    led_init();
 
     while (true)
     {
-        for (uint8_t index = 0; index < 4; index++)
+        for ( ; index < 4; index++)
         {
-            for (uint8_t i = 0; i < board_id[index]; i++)
+            for ( ; i < board_id[index]; i++)
             {
-                bsp_board_led_on(index);
-                nrf_delay_ms(500);
-                bsp_board_led_off(index);
-                nrf_delay_ms(500);
+                if(button_is_pressed(BUTTON1_PIN))
+                {
+                    led_turn_on(led_pins[index]);
+                    nrf_delay_ms(500);
+                }
+                
+                while(!button_is_pressed(BUTTON1_PIN))
+                {
+                    nrf_delay_ms(1);
+                }
+
+                if(button_is_pressed(BUTTON1_PIN))
+                {
+                    led_turn_off(led_pins[index]);
+                    nrf_delay_ms(500);
+                }
+
+                while(!button_is_pressed(BUTTON1_PIN))
+                {
+                    nrf_delay_ms(1);
+                }
             }  
+            i = 0;
         }       
-            nrf_delay_ms(1000);
+        
+        nrf_delay_ms(1000);
+        index = 0;
     }
 }
